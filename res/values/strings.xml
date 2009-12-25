@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Jabiru</string>
+	<string name="menu_connect">Connect</string>
+	<string name="menu_disconnect">Disconnect</string>
+	<string name="menu_account">Account</string>
+	<string name="menu_groupchat">Conference</string>
+	<string name="menu_options">Options</string>
+	<string name="menu_status">Status</string>
+	<string name="menu_groupchat_users">Conference Users</string>
+	<string name="menu_roster">Roster</string>
+	<string name="menu_offline_on">Show offline</string>
+	<string name="menu_offline_off">Hide offline</string>
+	<string name="menu_close">Close</string>
+	<string name="dialog_connecting_title">Jabber Connection</string>
+	<string name="dialog_connecting_message">Connecting...</string>
+	<string name="toast_connect_ok">Connection successful</string>
+	<string name="toast_connect_fail">Failed to connect</string>
+</resources>
