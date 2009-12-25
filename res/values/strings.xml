@@ -16,4 +16,10 @@
 	<string name="dialog_connecting_message">Connecting...</string>
 	<string name="toast_connect_ok">Connection successful</string>
 	<string name="toast_connect_fail">Failed to connect</string>
+	<string name="account_settings_title1">Account settings</string>
+	<string name="account_settings_jabberid">Jabber ID</string>
+	<string name="account_settings_jabberid_enter">Enter jabber id</string>
+	<string name="account_settings_jabberid_error">Jabber ID was in wrong format</string>
+	<string name="account_settings_password">Password</string>
+	<string name="account_settings_password_enter">Enter password</string>
 </resources>

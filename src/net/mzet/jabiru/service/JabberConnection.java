@@ -8,8 +8,13 @@ public class JabberConnection {
 	private final ConnectionConfiguration xmppConfig;
 	private final XMPPConnection xmppConnection;
 	
-	public JabberConnection() {
-		this.xmppConfig = new ConnectionConfiguration("domain", 5222);
+	private String username, password;
+	
+	public JabberConnection(String domain, String username, String password) {
+		this.username = username;
+		this.password = password;
+		
+		this.xmppConfig = new ConnectionConfiguration(domain, 5222);
 		this.xmppConfig.setReconnectionAllowed(true);
 		this.xmppConnection = new XMPPConnection(xmppConfig);
 	}
@@ -17,7 +22,7 @@ public class JabberConnection {
 	public boolean connect() throws XMPPException {
 		try {
 			xmppConnection.connect();
-			xmppConnection.login("user", "password", "Jabiru");
+			xmppConnection.login(username, password, "Jabiru");
 		}
 		catch(Exception e) {
 			return false;

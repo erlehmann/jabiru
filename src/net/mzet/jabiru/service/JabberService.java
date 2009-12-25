@@ -6,9 +6,11 @@ import org.jivesoftware.smack.XMPPException;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 
 public class JabberService extends Service {
 	private IRosterConnection.Stub rosterConnection;
@@ -19,7 +21,12 @@ public class JabberService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		
-		jabberConnection = new JabberConnection();
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+		
+		String[] jabberid = sp.getString("account_jabberid", "@").split("@");
+		String password = sp.getString("account_password", "");
+		
+		jabberConnection = new JabberConnection(jabberid[1], jabberid[0], password);
 		createRosterConnection();
 	}
 

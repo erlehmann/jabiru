@@ -4,6 +4,7 @@ import net.mzet.jabiru.roster.IRosterCallback;
 import net.mzet.jabiru.roster.RosterAdapter;
 import net.mzet.jabiru.service.IRosterConnection;
 import net.mzet.jabiru.service.JabberService;
+import net.mzet.jabiru.settings.AccountSettings;
 
 import android.app.Dialog;
 import android.app.ExpandableListActivity;
@@ -81,6 +82,9 @@ public class Main extends ExpandableListActivity {
 		switch(item.getItemId()) {
 		case MENU_CONNECT:
 			toggleConnection(item);
+			return true;
+		case MENU_ACCOUNT:
+			startActivity(new Intent(this, AccountSettings.class));
 			return true;
 		}
 		

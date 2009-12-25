@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	xmlns:android="http://schemas.android.com/apk/res/android">
+	<PreferenceCategory android:title="@string/account_settings_title1">
+		<EditTextPreference android:id="@+id/account_jabberid"
+				android:key="account_jabberid"
+				android:title="@string/account_settings_jabberid"
+				android:summary=""
+				android:dialogTitle="@string/account_settings_jabberid"
+				android:singleLine="true"
+		/>
+
+		<EditTextPreference android:id="@+id/account_password"
+				android:key="account_password"
+				android:title="@string/account_settings_password"
+				android:summary="@string/account_settings_password_enter"
+				android:dialogTitle="@string/account_settings_password_enter"
+				android:singleLine="true"
+				android:password="true"
+		/>
+	</PreferenceCategory>
+</PreferenceScreen>

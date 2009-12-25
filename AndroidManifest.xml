@@ -13,6 +13,7 @@
         </activity>
 
     <service android:name=".service.JabberService"></service>
+<activity android:name="net.mzet.jabiru.settings.AccountSettings"></activity>
 </application>
     <uses-sdk android:minSdkVersion="4" />
 
