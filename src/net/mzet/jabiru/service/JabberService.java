@@ -25,9 +25,12 @@ public class JabberService extends Service {
 		
 		String[] jabberid = sp.getString("account_jabberid", "@").split("@");
 		String password = sp.getString("account_password", "");
-		
+		System.out.println("service create");
 		jabberConnection = new JabberConnection(jabberid[1], jabberid[0], password);
 		createRosterConnection();
+		
+		/*Intent serviceIntent = new Intent(this, JabberService.class);
+		serviceIntent.setAction("net.mzet.jabiru.JABBERSERVICE");*/
 	}
 
 	@Override

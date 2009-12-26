@@ -29,6 +29,7 @@ public class Main extends ExpandableListActivity {
 	public static final int MENU_STATUS     = Menu.FIRST + 5;
 	
 	private static final int DIALOG_CONNECTING = 1;
+	ProgressDialog progressDialog;
 	
 	private ServiceConnection serviceConnection;
 	private Intent serviceIntent;
@@ -67,8 +68,8 @@ public class Main extends ExpandableListActivity {
 		super.onCreateOptionsMenu(menu);
 		
 		this.menu = menu;
-
-		menu.add(0, MENU_CONNECT, 0, R.string.menu_connect); 
+		
+		menu.add(0, MENU_CONNECT, 0, serviceAdapter != null && serviceAdapter.isLogged() ? R.string.menu_disconnect : R.string.menu_connect); 
 		menu.add(0, MENU_OFFLINE, 0, R.string.menu_offline_on);
 		menu.add(0, MENU_STATUS, 0, R.string.menu_status); 		
 		menu.add(0, MENU_ACCOUNT, 0, R.string.menu_account); 
@@ -95,7 +96,7 @@ public class Main extends ExpandableListActivity {
 	protected Dialog onCreateDialog(int id) {
 		switch(id) {
 		case DIALOG_CONNECTING:
-			ProgressDialog progressDialog = new ProgressDialog(this);
+			progressDialog = new ProgressDialog(this);
 			progressDialog.setIcon(android.R.drawable.ic_dialog_info);
 			progressDialog.setTitle(R.string.dialog_connecting_title);
 			progressDialog.setMessage(getText(R.string.dialog_connecting_message));
@@ -122,6 +123,7 @@ public class Main extends ExpandableListActivity {
 
 	private void registerJabberService() {
 		serviceIntent = new Intent(this, JabberService.class);
+		serviceIntent.setAction("net.mzet.jabiru.JABBERSERVICE");
 		serviceConnection = new ServiceConnection() {
 
 			@Override
@@ -137,7 +139,8 @@ public class Main extends ExpandableListActivity {
 	}
 	
 	private void bindJabberService() {
-		bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE);
+		bindService(serviceIntent, serviceConnection, 0);
+		startService(serviceIntent);
 	}
 	
 	private void unbindJabberService() {
@@ -157,7 +160,9 @@ public class Main extends ExpandableListActivity {
 					@Override
 					public void run() {
 						showToastNotification(R.string.toast_connect_ok);
-						dismissDialog(DIALOG_CONNECTING);
+						if(progressDialog != null && progressDialog.isShowing()) {
+							dismissDialog(DIALOG_CONNECTING);
+						}
 						if(menu != null) {
 							menu.findItem(MENU_CONNECT).setTitle(R.string.menu_disconnect);
 						}
@@ -170,7 +175,9 @@ public class Main extends ExpandableListActivity {
 				mainHandler.post(new Runnable() {
 					@Override
 					public void run() {
-						dismissDialog(DIALOG_CONNECTING);
+						if(progressDialog != null && progressDialog.isShowing()) {
+							dismissDialog(DIALOG_CONNECTING);
+						}
 						showToastNotification(R.string.toast_connect_fail);
 					}
 				});
