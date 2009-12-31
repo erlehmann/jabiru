@@ -1,5 +1,6 @@
 package net.mzet.jabiru.service;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,12 +25,14 @@ public class JabberConnection {
 	
 	private IServiceCallback serviceCallback;
 	private ConcurrentHashMap<String,ConcurrentHashMap<String,RosterItem>> groups;
+	private ConcurrentHashMap<String,RosterItem> items;
 	
 	public JabberConnection() {
 	}
 	
 	public boolean connect(String domain, String username, String password) throws XMPPException {
 		this.groups = new ConcurrentHashMap<String,ConcurrentHashMap<String,RosterItem>>();
+		this.items = new ConcurrentHashMap<String, RosterItem>();
 		this.xmppConfig = new ConnectionConfiguration(domain, 5222);
 		this.xmppConfig.setReconnectionAllowed(true);
 		this.xmppConnection = new XMPPConnection(xmppConfig);
@@ -71,6 +74,16 @@ public class JabberConnection {
 				rosterGetGroup(rg.getName()).put(jabberid, ri);
 			}
 		}
+		items.put(jabberid, ri);
+	}
+	
+	public RosterItem rosterPresence(Presence presence) {
+		String[] splid = presence.getFrom().split("/");
+		RosterItem ri = items.get(splid[0]);
+		if(ri != null) {
+			ri.setStatus(splid.length > 1 ? splid[1] : "", presence);
+		}
+		return ri;
 	}
 	
 	public void registerServiceCallback(IServiceCallback serviceCallback) {
@@ -100,7 +113,11 @@ public class JabberConnection {
 
 			@Override
 			public void presenceChanged(Presence presence) {
-				//presence.
+				String jabberid = presence.getFrom().split("/")[0];
+				if(items.containsKey(jabberid)) {
+					rosterPresence(presence);
+					serviceCallback.presenceChanged(jabberid);
+				}
 			}
 			
 		});
@@ -108,13 +125,18 @@ public class JabberConnection {
 	
 	public ArrayList<String> getRosterGroups() {
 		ArrayList<String> rg = new ArrayList<String>(groups.keySet());
-		Collections.sort(rg);
+		Collections.sort(rg, Collator.getInstance());
 		
 		return rg;
 	}
 	
+	public ArrayList<RosterItem> getRosterItem(String jabberid) {
+		ArrayList<RosterItem> ri = new ArrayList<RosterItem>();
+		ri.add(items.get(jabberid));
+		return ri;
+	}
+	
 	public ArrayList<RosterItem> getRosterItems(String group) {
-		System.out.println(group);
 		ArrayList<RosterItem> ri = new ArrayList<RosterItem>(groups.get(group).values());
 		Collections.sort(ri);
 		

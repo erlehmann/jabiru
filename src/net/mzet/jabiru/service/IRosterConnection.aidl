@@ -9,6 +9,7 @@ interface IRosterConnection {
 	boolean isLogged();
 	
 	List<String> getRosterGroups();
+	List<RosterItem> getRosterItem(String jabberid);
 	List<RosterItem> getRosterItems(String group);
 	
 	void registerCallback(IRosterCallback callback);

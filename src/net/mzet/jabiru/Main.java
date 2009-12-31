@@ -45,23 +45,21 @@ public class Main extends ExpandableListActivity {
 	private Menu menu;
 	
 	private SimpleExpandableListAdapter listAdapter;
-	private List<ArrayList<HashMap<String,String>>> listChild = new ArrayList<ArrayList<HashMap<String,String>>>();
+	private List<ArrayList<HashMap<String,RosterItem>>> listChild = new ArrayList<ArrayList<HashMap<String,RosterItem>>>();
 	private List<HashMap<String,String>> listGroup = new ArrayList<HashMap<String,String>>();
 	int ix = 0;
 	
 	/** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        registerJabberService();
-        createCallback();
-        setContentView(R.layout.main);
-        String[] groupIDs = {"group"};
-        String[] childIDs = {"nick"};
-        listAdapter = new RosterListAdapter(this, listGroup, R.layout.roster_group, groupIDs, new int[] { R.id.group_name }, listChild, R.layout.roster_child, childIDs, new int[] { R.id.child_name });
-        
-        setListAdapter(listAdapter);
-    }
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		registerJabberService();
+		createCallback();
+		setContentView(R.layout.main);
+		listAdapter = new RosterListAdapter(this, listGroup, R.layout.roster_group, new String[] { "group" }, new int[] { R.id.roster_group }, listChild, R.layout.roster_child, new String[] { }, new int[] {});
+		
+		setListAdapter(listAdapter);
+	}
 	
 	@Override
 	protected void onPause() {
@@ -125,7 +123,7 @@ public class Main extends ExpandableListActivity {
 			}).start();
 		}
 	}
-
+	
 	public void updateRoster() {
 		listGroup.clear();
 		listChild.clear();
@@ -139,14 +137,18 @@ public class Main extends ExpandableListActivity {
 			tmpHM1.put("group", group);
 			listGroup.add(tmpHM1);
 			
-			ArrayList<HashMap<String,String>> tmpAL2 = new ArrayList<HashMap<String,String>>();
+			ArrayList<HashMap<String,RosterItem>> tmpAL2 = new ArrayList<HashMap<String,RosterItem>>();
 			for(RosterItem item : rosterItems) {
-				HashMap<String,String> tmpHM2 = new HashMap<String,String>();
-				tmpHM2.put("nick", item.getNick());
+				HashMap<String,RosterItem> tmpHM2 = new HashMap<String,RosterItem>();
+				tmpHM2.put("item", item);
 				tmpAL2.add(tmpHM2);
 			}
 			listChild.add(tmpAL2);
 		}
+		listAdapter.notifyDataSetChanged();
+	}
+	
+	public void updatePresence(String jabberid) {
 		listAdapter.notifyDataSetChanged();
 	}
 	
@@ -187,8 +189,7 @@ public class Main extends ExpandableListActivity {
 	}
 	
 	private void unbindJabberService() {
-		System.out.println("unbind");
-		if(!serviceAdapter.isLogged()) {
+		if(serviceAdapter != null && !serviceAdapter.isLogged()) {
 			stopService(serviceIntent);
 		}
 		unbindService(serviceConnection);
@@ -245,6 +246,17 @@ public class Main extends ExpandableListActivity {
 							menu.findItem(MENU_CONNECT).setTitle(R.string.menu_connect);
 							clearRoster();
 						}
+					}
+				});
+			}
+
+			@Override
+			public void presenceChanged(final String jabberid)
+					throws RemoteException {
+				mainHandler.post(new Runnable() {
+					@Override
+					public void run() {
+						updatePresence(jabberid);
 					}
 				});
 			}

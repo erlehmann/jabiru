@@ -48,6 +48,15 @@ public class RosterAdapter {
 		return null;
 	}
 
+	public ArrayList<RosterItem> getRosterItem(String jabberid) {
+		try {
+			return (ArrayList<RosterItem>) serviceStub.getRosterItem(jabberid);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 	public ArrayList<RosterItem> getRosterItems(String group) {
 		try {
 			return (ArrayList<RosterItem>) serviceStub.getRosterItems(group);

@@ -52,6 +52,20 @@ public class JabberService extends Service {
 				}
 				rosterCallbacks.finishBroadcast();
 			}
+
+			@Override
+			public void presenceChanged(String jabberid) {
+				int n = rosterCallbacks.beginBroadcast();
+				for(int i = 0;i < n;i++) {
+					try {
+						rosterCallbacks.getBroadcastItem(i).presenceChanged(jabberid);
+					}
+					catch(RemoteException e) {
+						e.printStackTrace();
+					}
+				}
+				rosterCallbacks.finishBroadcast();
+			}
 		};
 	}
 	
@@ -62,7 +76,6 @@ public class JabberService extends Service {
 			}
 			
 			public void unregisterCallback(IRosterCallback callback) {
-				System.out.println("unregister callback");
 				rosterCallbacks.unregister(callback);
 			}
 			
@@ -88,6 +101,12 @@ public class JabberService extends Service {
 			@Override
 			public List<RosterItem> getRosterItems(String group) throws RemoteException {
 				return jabberConnection.getRosterItems(group);
+			}
+
+			@Override
+			public List<RosterItem> getRosterItem(String jabberid)
+					throws RemoteException {
+				return jabberConnection.getRosterItem(jabberid);
 			}
 		};
 	}
@@ -129,9 +148,7 @@ public class JabberService extends Service {
 	}
 	
 	public void connectOk() {
-		System.out.println("connectOk");
 		int n = rosterCallbacks.beginBroadcast();
-		System.out.println(n);
 		for(int i = 0;i < n;i++) {
 			try {
 				rosterCallbacks.getBroadcastItem(i).connectOk();
