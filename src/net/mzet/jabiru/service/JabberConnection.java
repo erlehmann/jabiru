@@ -9,13 +9,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.mzet.jabiru.roster.RosterItem;
 
 import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.Roster;
 import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.RosterGroup;
 import org.jivesoftware.smack.RosterListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.filter.PacketTypeFilter;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.provider.ProviderManager;
+import org.jivesoftware.smackx.packet.DelayInformation;
+import org.jivesoftware.smackx.packet.MultipleAddresses;
+import org.jivesoftware.smackx.provider.DelayInformationProvider;
+import org.jivesoftware.smackx.provider.MultipleAddressesProvider;
 
 public class JabberConnection {
 	private ConnectionConfiguration xmppConfig;
@@ -36,7 +45,6 @@ public class JabberConnection {
 		this.xmppConfig = new ConnectionConfiguration(domain, 5222);
 		this.xmppConfig.setReconnectionAllowed(true);
 		this.xmppConnection = new XMPPConnection(xmppConfig);
-		
 		try {
 			xmppConnection.connect();
 			xmppConnection.login(username, password, "Jabiru");
@@ -46,6 +54,7 @@ public class JabberConnection {
 		}
 		roster = xmppConnection.getRoster();
 		createRosterListener();
+		createMessageListener();
 		return true;
 	}
 
@@ -123,6 +132,29 @@ public class JabberConnection {
 		});
 	}
 	
+	public void createMessageListener() {
+		ProviderManager.getInstance().addExtensionProvider("addresses", "http://jabber.org/protocol/address", new MultipleAddressesProvider());
+		ProviderManager.getInstance().addExtensionProvider("x", "jabber:x:delay", new DelayInformationProvider());
+		xmppConnection.addPacketListener(new PacketListener() {
+			
+			@Override
+			public void processPacket(Packet packet) {
+				Message m = (Message) packet;
+				MultipleAddresses ma = (MultipleAddresses) packet.getExtension("http://jabber.org/protocol/address");
+				DelayInformation di = (DelayInformation) packet.getExtension("jabber:x:delay");
+				
+				if(di != null && ma != null && ma.getAddressesOfType("ofrom").size() > 0) {
+					/* forwarded message */
+				}
+				else {
+					if(serviceCallback != null) {
+						serviceCallback.newMessage(m.getFrom(), m.getBody(), null);
+					}
+				}
+			}
+		}, new PacketTypeFilter(Message.class));
+	}
+	
 	public ArrayList<String> getRosterGroups() {
 		ArrayList<String> rg = new ArrayList<String>(groups.keySet());
 		Collections.sort(rg, Collator.getInstance());
@@ -145,5 +177,11 @@ public class JabberConnection {
 
 	public boolean isLogged() {
 		return xmppConnection != null && xmppConnection.isConnected() && xmppConnection.isAuthenticated(); 
+	}
+	
+	public void sendMessage(String jabberid, String body) {
+		Message m = new Message(jabberid, Message.Type.chat);
+		m.setBody(body);
+		xmppConnection.sendPacket(m);
 	}
 }

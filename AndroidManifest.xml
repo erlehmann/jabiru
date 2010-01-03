@@ -16,6 +16,7 @@
 
     <service android:name=".service.JabberService"></service>
 <activity android:name="net.mzet.jabiru.settings.AccountSettings"></activity>
+<activity android:name="net.mzet.jabiru.chat.ChatActivity"></activity>
 </application>
     <uses-sdk android:minSdkVersion="4" />
 

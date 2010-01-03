@@ -76,7 +76,7 @@ public class RosterAdapter {
 	
 	public void unregisterCallback(IRosterCallback callback) {
 		try {
-			serviceStub.registerCallback(callback);
+			serviceStub.unregisterCallback(callback);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}

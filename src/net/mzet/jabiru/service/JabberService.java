@@ -1,7 +1,12 @@
 package net.mzet.jabiru.service;
 
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
+import net.mzet.jabiru.chat.ChatItem;
+import net.mzet.jabiru.chat.ChatSession;
+import net.mzet.jabiru.chat.IChatCallback;
 import net.mzet.jabiru.roster.IRosterCallback;
 import net.mzet.jabiru.roster.RosterItem;
 
@@ -17,22 +22,30 @@ import android.preference.PreferenceManager;
 
 public class JabberService extends Service {
 	private IRosterConnection.Stub rosterConnection;
+	private IChatConnection.Stub chatConnection;
 	private JabberConnection jabberConnection;
 	private RemoteCallbackList<IRosterCallback> rosterCallbacks = new RemoteCallbackList<IRosterCallback>(); 
+	private RemoteCallbackList<IChatCallback> chatCallbacks = new RemoteCallbackList<IChatCallback>(); 
 	private IServiceCallback callback;
+	private ConcurrentHashMap<String,ChatSession> chats;
 	
 	@Override
 	public void onCreate() {
 		super.onCreate();
 
 		createRosterConnection();
+		createChatConnection();
 		createCallback();
 		jabberConnection = new JabberConnection();
 		jabberConnection.registerServiceCallback(callback);
+		chats = new ConcurrentHashMap<String,ChatSession>();
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
+		if(intent.getDataString() != null && intent.getDataString().equals("chat")) {
+			return chatConnection;
+		}
 		return rosterConnection;
 	}
 	
@@ -65,6 +78,52 @@ public class JabberService extends Service {
 					}
 				}
 				rosterCallbacks.finishBroadcast();
+			}
+
+			@Override
+			public void newMessage(String jabberid, String body, Date time) {
+				ChatSession chs;
+				ChatItem chi = new ChatItem(body, time);
+				if(chats.containsKey(jabberid)) {
+					chs = chats.get(jabberid);
+					chs.queueAdd(chi);
+				}
+				else {
+					chs = new ChatSession(jabberid, ChatSession.NORMAL, "");
+					chs.queueAdd(chi);
+					chats.put(jabberid, chs);
+					int n;
+					n = rosterCallbacks.beginBroadcast();
+					for(int i = 0;i < n;i++) {
+						try {
+							rosterCallbacks.getBroadcastItem(i).chatOpened(jabberid);
+						}
+						catch(RemoteException e) {
+							e.printStackTrace();
+						}
+					}
+					rosterCallbacks.finishBroadcast();
+					n = chatCallbacks.beginBroadcast();
+					for(int i = 0;i < n;i++) {
+						try {
+							chatCallbacks.getBroadcastItem(i).opened(jabberid);
+						}
+						catch(RemoteException e) {
+							e.printStackTrace();
+						}
+					}
+					chatCallbacks.finishBroadcast();
+				}
+				int n = chatCallbacks.beginBroadcast();
+				for(int i = 0;i < n;i++) {
+					try {
+						chatCallbacks.getBroadcastItem(i).messages(jabberid);
+					}
+					catch(RemoteException e) {
+						e.printStackTrace();
+					}
+				}
+				chatCallbacks.finishBroadcast();
 			}
 		};
 	}
@@ -111,6 +170,58 @@ public class JabberService extends Service {
 		};
 	}
 	
+	public void createChatConnection() {
+		chatConnection = new IChatConnection.Stub() {
+			
+			@Override
+			public void unregisterCallback(IChatCallback callback)
+					throws RemoteException {
+				chatCallbacks.unregister(callback);
+			}
+			
+			@Override
+			public void registerCallback(IChatCallback callback) throws RemoteException {
+				chatCallbacks.register(callback);
+			}
+			
+			@Override
+			public List<ChatItem> getQueueMessages(String jabberid)
+					throws RemoteException {
+				if(chats.containsKey(jabberid)) {
+					return chats.get(jabberid).queueGet();
+				}
+				return null;
+			}
+			
+			@Override
+			public List<String> getChats() throws RemoteException {
+				return null;
+			}
+
+			@Override
+			public void close(String jabberid) throws RemoteException {
+				if(chats.containsKey(jabberid)) {
+					chats.remove(jabberid);
+				}
+			}
+
+			@Override
+			public void sendMessage(String jabberid, String body)
+					throws RemoteException {
+				jabberConnection.sendMessage(jabberid, body);
+			}
+
+			@Override
+			public void open(String jabberid) throws RemoteException {
+				if(!chats.containsKey(jabberid)) {
+					ChatSession chs = new ChatSession(jabberid, ChatSession.NORMAL, "");
+					chats.put(jabberid, chs);
+				}
+					
+			}
+		};
+	}
+	
 	public void connect() {
 		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);		
 		final String[] jabberid = sp.getString("account_jabberid", "@").split("@");
@@ -119,7 +230,7 @@ public class JabberService extends Service {
 		(new Thread() {
 			public void run() {
 				try {
-					if(jabberConnection.connect(jabberid.length > 1 ? jabberid[1] : "", jabberid[0], password)) {
+					if(jabberConnection.connect(jabberid.length > 1 ? jabberid[1] : "", jabberid.length > 0 ? jabberid[0] : "", password)) {
 						connectOk();
 					}
 					else {

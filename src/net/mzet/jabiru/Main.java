@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import net.mzet.jabiru.chat.ChatActivity;
 import net.mzet.jabiru.roster.IRosterCallback;
 import net.mzet.jabiru.roster.RosterAdapter;
 import net.mzet.jabiru.roster.RosterItem;
@@ -17,12 +18,15 @@ import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ExpandableListView;
 import android.widget.SimpleExpandableListAdapter;
 import android.widget.Toast;
 
@@ -64,9 +68,6 @@ public class Main extends ExpandableListActivity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		if(serviceAdapter != null) {
-			serviceAdapter.unregisterCallback(callback);
-		}
 		unbindJabberService();
 	}
 
@@ -124,6 +125,16 @@ public class Main extends ExpandableListActivity {
 		}
 	}
 	
+	@Override
+	public boolean onChildClick(ExpandableListView parent, View v,
+			int groupPosition, int childPosition, long id) {
+		
+		RosterItem ri = listChild.get(groupPosition).get(childPosition).get("item");
+		openChat(ri.getJabberID() + (ri.getHighestResource() == null ? "" : "/" + ri.getHighestResource()));
+		
+		return true;
+	}
+
 	public void updateRoster() {
 		listGroup.clear();
 		listChild.clear();
@@ -158,6 +169,12 @@ public class Main extends ExpandableListActivity {
 		listAdapter.notifyDataSetChanged();
 	}
 	
+	public void openChat(String jabberid) {
+		Intent intent = new Intent(this, ChatActivity.class);
+		intent.setData(Uri.parse(jabberid));
+		startActivity(intent);
+	}
+	
 	private void showToastNotification(int message) {
 		Toast tmptoast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
 		tmptoast.show();
@@ -179,6 +196,9 @@ public class Main extends ExpandableListActivity {
 
 			@Override
 			public void onServiceDisconnected(ComponentName name) {
+				if(serviceAdapter != null) {
+					serviceAdapter.unregisterCallback(callback);
+				}
 			}
 		};
 	}
@@ -259,6 +279,11 @@ public class Main extends ExpandableListActivity {
 						updatePresence(jabberid);
 					}
 				});
+			}
+
+			@Override
+			public void chatOpened(String jabberid) throws RemoteException {
+				openChat(jabberid);
 			}
 		};
 	}

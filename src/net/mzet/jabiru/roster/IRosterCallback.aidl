@@ -6,6 +6,7 @@ interface IRosterCallback {
 	void connectOk();
 	void connectFail();
 	void rosterChanged();
+	void chatOpened(String jabberid);
 	void presenceChanged(String jabberid);
 	void disconnect();
 }
