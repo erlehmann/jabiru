@@ -45,9 +45,9 @@ public class ChatAdapter {
 		}
 	}
 
-	public void registerCallback(IChatCallback callback) {
+	public void registerCallback(IChatCallback callback, String jabberid) {
 		try {
-			serviceStub.registerCallback(callback);
+			serviceStub.registerCallback(callback, jabberid);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}

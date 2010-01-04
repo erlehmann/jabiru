@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.mzet.jabiru.R;
+import net.mzet.jabiru.chat.ChatActivity;
 import net.mzet.jabiru.chat.ChatItem;
 import net.mzet.jabiru.chat.ChatSession;
 import net.mzet.jabiru.chat.IChatCallback;
@@ -12,9 +14,13 @@ import net.mzet.jabiru.roster.RosterItem;
 
 import org.jivesoftware.smack.XMPPException;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
@@ -28,6 +34,8 @@ public class JabberService extends Service {
 	private RemoteCallbackList<IChatCallback> chatCallbacks = new RemoteCallbackList<IChatCallback>(); 
 	private IServiceCallback callback;
 	private ConcurrentHashMap<String,ChatSession> chats;
+	private String activeJID;
+	private int nextChatID = 0;
 	
 	@Override
 	public void onCreate() {
@@ -89,7 +97,7 @@ public class JabberService extends Service {
 					chs.queueAdd(chi);
 				}
 				else {
-					chs = new ChatSession(jabberid, ChatSession.NORMAL, "");
+					chs = new ChatSession(nextChatID++, jabberid, ChatSession.NORMAL, "");
 					chs.queueAdd(chi);
 					chats.put(jabberid, chs);
 					int n;
@@ -124,6 +132,10 @@ public class JabberService extends Service {
 					}
 				}
 				chatCallbacks.finishBroadcast();
+				
+				if(activeJID == null || !activeJID.equals(jabberid)) {
+					createNotify(jabberid, body);
+				}
 			}
 		};
 	}
@@ -177,11 +189,13 @@ public class JabberService extends Service {
 			public void unregisterCallback(IChatCallback callback)
 					throws RemoteException {
 				chatCallbacks.unregister(callback);
+				activeJID = null;
 			}
 			
 			@Override
-			public void registerCallback(IChatCallback callback) throws RemoteException {
+			public void registerCallback(IChatCallback callback, String jabberid) throws RemoteException {
 				chatCallbacks.register(callback);
+				activeJID = jabberid;
 			}
 			
 			@Override
@@ -214,12 +228,37 @@ public class JabberService extends Service {
 			@Override
 			public void open(String jabberid) throws RemoteException {
 				if(!chats.containsKey(jabberid)) {
-					ChatSession chs = new ChatSession(jabberid, ChatSession.NORMAL, "");
+					ChatSession chs = new ChatSession(nextChatID++, jabberid, ChatSession.NORMAL, "");
 					chats.put(jabberid, chs);
 				}
 					
 			}
+
+			@Override
+			public int getID(String jabberid) throws RemoteException {
+				if(!chats.containsKey(jabberid)) {
+					return chats.get(jabberid).getID();
+				}
+				return -1;
+			}
 		};
+	}
+	
+	public void createNotify(String jabberid, String body) {
+		String from = jabberid;
+		
+		String title = "New message from " + from;
+		Notification notification = new Notification(R.drawable.icon_message, title, System.currentTimeMillis());
+		
+		Intent intent = new Intent(this, ChatActivity.class);
+		intent.setData(Uri.parse(jabberid));
+		
+		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+		notification.setLatestEventInfo(this, title, body, pendingIntent);
+		notification.flags = Notification.FLAG_AUTO_CANCEL | Notification.FLAG_ONLY_ALERT_ONCE;
+		notification.number = chats.get(jabberid).queueSize();
+		
+		((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(chats.get(jabberid).getID(), notification);
 	}
 	
 	public void connect() {

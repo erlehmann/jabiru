@@ -196,9 +196,6 @@ public class Main extends ExpandableListActivity {
 
 			@Override
 			public void onServiceDisconnected(ComponentName name) {
-				if(serviceAdapter != null) {
-					serviceAdapter.unregisterCallback(callback);
-				}
 			}
 		};
 	}
@@ -211,6 +208,9 @@ public class Main extends ExpandableListActivity {
 	private void unbindJabberService() {
 		if(serviceAdapter != null && !serviceAdapter.isLogged()) {
 			stopService(serviceIntent);
+		}
+		if(serviceAdapter != null) {
+			serviceAdapter.unregisterCallback(callback);
 		}
 		unbindService(serviceConnection);
 	}
@@ -283,7 +283,7 @@ public class Main extends ExpandableListActivity {
 
 			@Override
 			public void chatOpened(String jabberid) throws RemoteException {
-				openChat(jabberid);
+				//openChat(jabberid);
 			}
 		};
 	}

@@ -57,6 +57,9 @@ public class ChatActivity extends ListActivity {
 	@Override
 	protected void onPause() {
 		super.onPause();
+		if(serviceAdapter != null) {
+			serviceAdapter.unregisterCallback(callback);
+		}
 		unbindJabberService();
 	}
 
@@ -75,15 +78,12 @@ public class ChatActivity extends ListActivity {
 			@Override
 			public void onServiceConnected(ComponentName name, IBinder service) {
 				serviceAdapter = new ChatAdapter(IChatConnection.Stub.asInterface(service));
-				serviceAdapter.registerCallback(callback);
+				serviceAdapter.registerCallback(callback, jabberid);
 				loadQueue();
 			}
 
 			@Override
-			public void onServiceDisconnected(ComponentName arg0) {
-				if(serviceAdapter != null) {
-					serviceAdapter.unregisterCallback(callback);
-				}
+			public void onServiceDisconnected(ComponentName name) {
 			}
 		};
 	}
